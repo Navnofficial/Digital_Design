@@ -1,0 +1,36 @@
+"ExpressPCB Netlist"
+"LTspice"
+1
+0
+0
+""
+""
+""
+"Part IDs Table"
+"M1" "NMOS" ""
+"M2" "PMOS" ""
+"V1" "5" ""
+"V2" "SINE(2.5 2.5 10)" ""
+
+"Net Names Table"
+"Output" 1
+"Input" 3
+"0" 6
+"N003" 9
+"N001" 10
+"N002" 12
+
+"Net Connections Table"
+1 1 1 2
+1 2 3 0
+2 1 2 4
+2 2 2 5
+2 4 1 0
+3 1 3 7
+3 3 2 8
+3 4 2 0
+4 1 4 0
+5 2 1 11
+5 3 1 0
+6 2 4 0
+
