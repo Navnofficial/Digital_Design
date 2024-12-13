@@ -90,7 +90,7 @@ Contributions to this project are welcome! If you identify any issues, have idea
 
 ## Circuit Diagram  
 Below is the CMOS AND gate circuit diagram:  
-![AND Gate Circuit Diagram](and_gate_ckt.png)  
+![AND Gate Circuit Diagram](And_gate_ckt.png)  
 
 ## Simulation Output  
 The transient response of the AND gate is shown below, where the output transitions based on the input signals (`Input A` and `Input B`).  
