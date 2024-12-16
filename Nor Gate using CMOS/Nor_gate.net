@@ -1,0 +1,14 @@
+* D:\project\VLSI\Components\Nor_gate.asc
+M1 Output Input_B 0 0 NMOS
+M2 Output Input_A 0 0 NMOS
+M3 N002 Input_A Output Output PMOS
+M4 N001 Input_B N002 N002 PMOS
+V1 Input_B NC_01 PULSE(0 5 0 5n 5n 20m 40m)
+V2 Input_A NC_02 PULSE(0 5 0 5n 5n 40m 80m)
+V3 N001 0 5
+.model NMOS NMOS
+.model PMOS PMOS
+.lib C:\Users\jjaya\AppData\Local\LTspice\lib\cmp\standard.mos
+.tran 200m
+.backanno
+.end
