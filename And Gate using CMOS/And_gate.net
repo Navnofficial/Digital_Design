@@ -1,0 +1,19 @@
+* D:\project\VLSI\AND_GATE\And_gate.asc
+M1 N003 Input_B 0 0 NMOS
+M2 N002 Input_A N003 N003 NMOS
+M3 N001 Input_A N002 N002 PMOS
+M4 N001 Input_B N002 N002 PMOS
+M5 N004 N002 0 0 NMOS
+M6 Output N002 N004 N004 NMOS
+M7 N001 N002 Output Output PMOS
+M8 N001 N002 Output Output PMOS
+V-a Input_A 0 PULSE(0 5 0 5n 5n 20m 40m)
+V-b Input_B 0 PULSE(0 5 0 5n 5n 40m 80m)
+Vdd N001 0 5
+.model NMOS NMOS
+.model PMOS PMOS
+.lib C:\Users\jjaya\AppData\Local\LTspice\lib\cmp\standard.mos
+.tran 160m
+* AND GATE
+.backanno
+.end

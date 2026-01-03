@@ -1,0 +1,219 @@
+module binary_to_7segment (
+    input wire clk,                    // Clock input
+    input wire reset,                  // Reset input
+    input wire [7:0] binary_input,     // 8-bit binary input (0-255)
+    output wire [6:0] seg_hundreds,    // 7-segment for hundreds digit
+    output wire [6:0] seg_tens,        // 7-segment for tens digit  
+    output wire [6:0] seg_units,       // 7-segment for units digit
+    output wire [2:0] digit_enable     // Enable signals for digits (optional)
+);
+
+    // Internal wires for BCD digits
+    wire [3:0] hundreds, tens, units;
+    
+    // Convert binary to BCD
+    binary_to_bcd bcd_converter (
+        .binary_in(binary_input),
+        .hundreds(hundreds),
+        .tens(tens),
+        .units(units)
+    );
+    
+    // Convert BCD digits to 7-segment display
+    bcd_to_7seg seg_decoder_hundreds (
+        .bcd_in(hundreds),
+        .seg_out(seg_hundreds)
+    );
+    
+    bcd_to_7seg seg_decoder_tens (
+        .bcd_in(tens),
+        .seg_out(seg_tens)
+    );
+    
+    bcd_to_7seg seg_decoder_units (
+        .bcd_in(units),
+        .seg_out(seg_units)
+    );
+    
+    // Enable all digits (modify as needed)
+    assign digit_enable = 3'b111;
+
+endmodule
+
+// Binary to BCD converter using Double Dabble algorithm
+module binary_to_bcd (
+    input wire [7:0] binary_in,
+    output reg [3:0] hundreds,
+    output reg [3:0] tens,
+    output reg [3:0] units
+);
+
+    integer i;
+    reg [19:0] temp;
+
+    always @(*) begin
+        temp = {12'b0, binary_in};
+        
+        for (i = 0; i < 8; i = i + 1) begin
+            // Check and add 3 to BCD digits if >= 5
+            if (temp[11:8] >= 5)
+                temp[11:8] = temp[11:8] + 3;
+            if (temp[15:12] >= 5)
+                temp[15:12] = temp[15:12] + 3;
+            if (temp[19:16] >= 5)
+                temp[19:16] = temp[19:16] + 3;
+                
+            // Shift left
+            temp = temp << 1;
+        end
+        
+        // Extract BCD digits
+        units = temp[11:8];
+        tens = temp[15:12];
+        hundreds = temp[19:16];
+    end
+
+endmodule
+
+// BCD to 7-segment decoder
+module bcd_to_7seg (
+    input wire [3:0] bcd_in,
+    output reg [6:0] seg_out
+);
+
+    // 7-segment encoding (active low - common anode)
+    // Segments: gfedcba
+    // For common cathode, invert all outputs
+    always @(*) begin
+        case (bcd_in)
+            4'h0: seg_out = 7'b1000000; // 0
+            4'h1: seg_out = 7'b1111001; // 1
+            4'h2: seg_out = 7'b0100100; // 2
+            4'h3: seg_out = 7'b0110000; // 3
+            4'h4: seg_out = 7'b0011001; // 4
+            4'h5: seg_out = 7'b0010010; // 5
+            4'h6: seg_out = 7'b0000010; // 6
+            4'h7: seg_out = 7'b1111000; // 7
+            4'h8: seg_out = 7'b0000000; // 8
+            4'h9: seg_out = 7'b0010000; // 9
+            default: seg_out = 7'b1111111; // Blank/off
+        endcase
+    end
+
+endmodule
+
+// Optional: Multiplexed display controller for time-division multiplexing
+module display_multiplexer (
+    input wire clk,                    // Main clock (50MHz)
+    input wire reset,
+    input wire [6:0] seg_hundreds,
+    input wire [6:0] seg_tens,
+    input wire [6:0] seg_units,
+    output reg [6:0] seg_out,          // Multiplexed segment output
+    output reg [2:0] digit_select      // Digit selection (active low)
+);
+
+    reg [15:0] counter;
+    reg [1:0] digit_counter;
+    
+    // Clock divider for display refresh (approximately 1kHz)
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
+            counter <= 0;
+            digit_counter <= 0;
+        end else begin
+            counter <= counter + 1;
+            if (counter == 16'h0000) begin // Adjust for desired refresh rate
+                digit_counter <= digit_counter + 1;
+                if (digit_counter == 2)
+                    digit_counter <= 0;
+            end
+        end
+    end
+    
+    // Multiplex the displays
+    always @(*) begin
+        case (digit_counter)
+            2'b00: begin
+                seg_out = seg_units;
+                digit_select = 3'b110; // Select units digit
+            end
+            2'b01: begin
+                seg_out = seg_tens;
+                digit_select = 3'b101; // Select tens digit
+            end
+            2'b10: begin
+                seg_out = seg_hundreds;
+                digit_select = 3'b011; // Select hundreds digit
+            end
+            default: begin
+                seg_out = 7'b1111111;
+                digit_select = 3'b111; // All off
+            end
+        endcase
+    end
+
+endmodule
+
+// Top-level module for Pin Planner assignment
+// Use these signal names in Quartus Pin Planner to assign to actual pins
+module top_level (
+    input wire clk,                    // Main clock - assign to your clock pin
+    input wire reset,                  // Reset button - assign to a push button
+    input wire sw0, sw1, sw2, sw3,     // Binary input switches
+    input wire sw4, sw5, sw6, sw7,     // More binary input switches
+    output wire seg0_a, seg0_b, seg0_c, seg0_d, seg0_e, seg0_f, seg0_g, // Units digit segments
+    output wire seg1_a, seg1_b, seg1_c, seg1_d, seg1_e, seg1_f, seg1_g, // Tens digit segments  
+    output wire seg2_a, seg2_b, seg2_c, seg2_d, seg2_e, seg2_f, seg2_g, // Hundreds digit segments
+    output wire led0, led1, led2, led3, led4, led5, led6, led7         // Debug LEDs
+);
+
+    wire reset_n = ~reset;             // Active low reset
+    wire [7:0] binary_value = {sw7, sw6, sw5, sw4, sw3, sw2, sw1, sw0}; // Combine switches
+    
+    // Internal wires for 7-segment outputs
+    wire [6:0] hex0_out, hex1_out, hex2_out;
+    
+    // Instantiate the binary to 7-segment converter
+    binary_to_7segment display_converter (
+        .clk(clk),
+        .reset(reset_n),
+        .binary_input(binary_value),
+        .seg_hundreds(hex2_out),
+        .seg_tens(hex1_out),
+        .seg_units(hex0_out),
+        .digit_enable()                // Not used in this example
+    );
+    
+    // Map 7-segment outputs to individual pins for Pin Planner
+    // Units digit (rightmost)
+    assign seg0_a = hex0_out[0];
+    assign seg0_b = hex0_out[1]; 
+    assign seg0_c = hex0_out[2];
+    assign seg0_d = hex0_out[3];
+    assign seg0_e = hex0_out[4];
+    assign seg0_f = hex0_out[5];
+    assign seg0_g = hex0_out[6];
+    
+    // Tens digit (middle)
+    assign seg1_a = hex1_out[0];
+    assign seg1_b = hex1_out[1];
+    assign seg1_c = hex1_out[2];
+    assign seg1_d = hex1_out[3];
+    assign seg1_e = hex1_out[4];
+    assign seg1_f = hex1_out[5];
+    assign seg1_g = hex1_out[6];
+    
+    // Hundreds digit (leftmost)
+    assign seg2_a = hex2_out[0];
+    assign seg2_b = hex2_out[1];
+    assign seg2_c = hex2_out[2];
+    assign seg2_d = hex2_out[3];
+    assign seg2_e = hex2_out[4];
+    assign seg2_f = hex2_out[5];
+    assign seg2_g = hex2_out[6];
+    
+    // Display binary input on LEDs for debugging
+    assign {led7, led6, led5, led4, led3, led2, led1, led0} = binary_value;
+
+endmodule
